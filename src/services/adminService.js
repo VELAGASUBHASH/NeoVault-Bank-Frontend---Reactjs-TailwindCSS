@@ -8,3 +8,8 @@ export const closeAccount = (accountNumber) =>
     api.put(`/api/admin/accounts/close/${accountNumber}`);
 export const approveLoan = (loanId) =>
     api.put(`/api/admin/loans/${loanId}/approve`);
+
+export const getPendingLoans = async () => {
+    const response = await api.get('/admin/loans/pending');
+    return response.data;
+};
