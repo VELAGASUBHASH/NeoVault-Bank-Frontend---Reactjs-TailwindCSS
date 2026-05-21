@@ -1,24 +1,22 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSlice } from '@reduxjs/toolkit';
 
 const accountSlice = createSlice({
-    name: "account",
+    name: 'account',
     initialState: {
-        accounts: [],
-        selectedAccount: null,
-        balance: null,
+        currentAccount: null,
     },
     reducers: {
-        setAccounts(state, action) {
-            state.accounts = action.payload;
+
+        setAccount: (state, action) => {
+            state.currentAccount = action.payload;
         },
-        setSelectedAccount(state, action) {
-            state.selectedAccount = action.payload;
-        },
-        setBalance(state, action) {
-            state.balance = action.payload;
-        },
+        clearAccount: (state) => {
+            state.currentAccount = null;
+        }
     },
 });
 
-export const { setAccounts, setSelectedAccount, setBalance } = accountSlice.actions;
+
+export const { setAccount, clearAccount } = accountSlice.actions;
+
 export default accountSlice.reducer;

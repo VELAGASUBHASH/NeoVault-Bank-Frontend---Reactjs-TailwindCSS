@@ -1,39 +1,36 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSlice } from '@reduxjs/toolkit';
 
-const token = localStorage.getItem("accessToken");
-const user = JSON.parse(localStorage.getItem("user") || "null");
+// Safely parse user from localStorage
+const storedUser = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : null;
+
+const initialState = {
+    user: storedUser,
+    token: localStorage.getItem('token') || null,
+    isAuthenticated: !!localStorage.getItem('token'),
+};
 
 const authSlice = createSlice({
-    name: "auth",
-    initialState: {
-        isAuthenticated: !!token,
-        user: user,
-        accessToken: token,
-        refreshToken: localStorage.getItem("refreshToken"),
-    },
+    name: 'auth',
+    initialState,
     reducers: {
         loginSuccess(state, action) {
-            state.isAuthenticated = true;
             state.user = action.payload.user;
-            state.accessToken = action.payload.accessToken;
-            state.refreshToken = action.payload.refreshToken;
-            localStorage.setItem("accessToken", action.payload.accessToken);
-            localStorage.setItem("refreshToken", action.payload.refreshToken);
-            localStorage.setItem("user", JSON.stringify(action.payload.user));
+            state.token = action.payload.token;
+            state.isAuthenticated = true;
+            // Persist to local storage
+            localStorage.setItem('token', action.payload.token);
+            localStorage.setItem('user', JSON.stringify(action.payload.user));
         },
         logout(state) {
-            state.isAuthenticated = false;
             state.user = null;
-            state.accessToken = null;
-            state.refreshToken = null;
-            localStorage.clear();
-        },
-        updateUser(state, action) {
-            state.user = { ...state.user, ...action.payload };
-            localStorage.setItem("user", JSON.stringify(state.user));
+            state.token = null;
+            state.isAuthenticated = false;
+            // Clear local storage
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
         },
     },
 });
 
-export const { loginSuccess, logout, updateUser } = authSlice.actions;
+export const { loginSuccess, logout } = authSlice.actions;
 export default authSlice.reducer;

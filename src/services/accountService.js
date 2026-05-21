@@ -7,6 +7,7 @@ export const getBalance = (accountNumber) =>
     api.get(`/api/accounts/balance/${accountNumber}`);
 
 export const getMyAccount = async () => {
-    const response = await api.get('/accounts/my-account');
+
+    const response = await api.get('/api/accounts/my-account');
     return response.data;
 };
