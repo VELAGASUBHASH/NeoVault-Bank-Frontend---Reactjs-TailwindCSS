@@ -22,7 +22,7 @@ export default function RegisterPage() {
             toast.success("OTP sent to your email!");
             setStep(2);
         } catch (err) {
-            toast.error(err.response?.data?.message || "Failed to send OTP");
+            toast.error(err.response?.data?.message || err.response?.data || "Failed to send OTP");
         } finally {
             setLoading(false);
         }
@@ -32,10 +32,17 @@ export default function RegisterPage() {
         if (otp.length < 6) return toast.error("Enter complete OTP");
         setLoading(true);
         try {
-            await verifyRegisterOtp({ email: form.email, otp });
+            // FIX: Pass the entire registration payload along with the OTP
+            // so your backend can persist user credentials securely on code completion.
+            await verifyRegisterOtp({
+                name: form.name,
+                email: form.email,
+                password: form.password,
+                otp
+            });
             setStep(3);
         } catch (err) {
-            toast.error(err.response?.data?.message || "Invalid OTP");
+            toast.error(err.response?.data?.message || err.response?.data || "Invalid OTP");
         } finally {
             setLoading(false);
         }
@@ -79,27 +86,30 @@ export default function RegisterPage() {
                                         <User size={16} className="absolute left-3.5 top-3.5 text-gray-500" />
                                         <input
                                             type="text" placeholder="Full Name"
-                                            className="input-field pl-10"
+                                            className="input-field pl-10 w-full"
                                             value={form.name}
                                             onChange={(e) => setForm({ ...form, name: e.target.value })}
+                                            required
                                         />
                                     </div>
                                     <div className="relative">
                                         <Mail size={16} className="absolute left-3.5 top-3.5 text-gray-500" />
                                         <input
                                             type="email" placeholder="Email Address"
-                                            className="input-field pl-10"
+                                            className="input-field pl-10 w-full"
                                             value={form.email}
                                             onChange={(e) => setForm({ ...form, email: e.target.value })}
+                                            required
                                         />
                                     </div>
                                     <div className="relative">
                                         <Lock size={16} className="absolute left-3.5 top-3.5 text-gray-500" />
                                         <input
                                             type="password" placeholder="Password"
-                                            className="input-field pl-10"
+                                            className="input-field pl-10 w-full"
                                             value={form.password}
                                             onChange={(e) => setForm({ ...form, password: e.target.value })}
+                                            required
                                         />
                                     </div>
                                     <button type="submit" disabled={loading} className="btn-primary w-full flex items-center justify-center gap-2 mt-2">
@@ -113,11 +123,14 @@ export default function RegisterPage() {
                             <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
                                 <h2 className="text-2xl font-bold text-white mb-2">Verify your email</h2>
                                 <p className="text-gray-500 text-sm mb-6">We sent a 6-digit code to <span className="text-navy-300">{form.email}</span></p>
-                                <div className="mb-6">
+                                <div className="mb-6 flex justify-center">
                                     <OtpInput value={otp} onChange={setOtp} />
                                 </div>
                                 <button onClick={handleVerify} disabled={loading} className="btn-primary w-full">
                                     {loading ? "Verifying..." : "Verify & Register"}
+                                </button>
+                                <button onClick={() => { setStep(1); setOtp(""); }} className="w-full text-center text-sm text-gray-500 hover:text-white mt-4 transition-colors">
+                                    ← Back to Form
                                 </button>
                             </motion.div>
                         )}

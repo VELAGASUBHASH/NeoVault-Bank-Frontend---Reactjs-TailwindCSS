@@ -4,8 +4,10 @@ import { useDispatch } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { Vault, Mail, Lock, ArrowRight } from "lucide-react";
+
+// Corrected Imports: Importing the verified reducer action and auth API service helper utilities
+import { setCredentials } from "../../store/authSlice";
 import { login, verifyLoginOtp } from "../../services/authService";
-import { loginSuccess } from "../../store/authSlice";
 import OtpInput from "../../components/ui/OtpInput";
 
 export default function LoginPage() {
@@ -25,26 +27,39 @@ export default function LoginPage() {
             toast.success("OTP sent to your email!");
             setStep(2);
         } catch (err) {
-            toast.error(err.response?.data?.message || "Login failed");
+            toast.error(err.response?.data?.message || err.response?.data || "Login failed");
         } finally {
             setLoading(false);
         }
     };
-
 
     const handleVerifyOtp = async () => {
         if (otp.length < 6) return toast.error("Enter complete OTP");
         setLoading(true);
         try {
             const res = await verifyLoginOtp({ email: form.email, otp });
-            const { accessToken, refreshToken } = res.data;
-            // Decode name from token or use email
-            const user = { name: form.email.split("@")[0], email: form.email };
-            dispatch(loginSuccess({ user, accessToken, refreshToken }));
+
+            // Extract tokens safely whether matching standard data roots or custom payload objects
+            const accessToken = res.data?.accessToken || res.data?.token || res.token;
+
+            // Reconstruct the user object matching what your global components expect
+            const user = {
+                name: form.email.split("@")[0],
+                email: form.email,
+                role: res.data?.user?.role || res.data?.role || "USER" // Falls back cleanly if not returned
+            };
+
+            if (!accessToken) {
+                throw new Error("Authentication token was not returned from server.");
+            }
+
+            // Corrected Action: Dispatches via setCredentials to structure and persist session tokens
+            dispatch(setCredentials({ user, accessToken }));
+
             toast.success("Welcome back!");
             navigate("/dashboard");
         } catch (err) {
-            toast.error(err.response?.data?.message || "Invalid OTP");
+            toast.error(err.response?.data?.message || err.response?.data || "Invalid OTP");
         } finally {
             setLoading(false);
         }
@@ -82,18 +97,20 @@ export default function LoginPage() {
                                         <Mail size={16} className="absolute left-3.5 top-3.5 text-gray-500" />
                                         <input
                                             type="email" placeholder="Email Address"
-                                            className="input-field pl-10"
+                                            className="input-field pl-10 w-full"
                                             value={form.email}
                                             onChange={(e) => setForm({ ...form, email: e.target.value })}
+                                            required
                                         />
                                     </div>
                                     <div className="relative">
                                         <Lock size={16} className="absolute left-3.5 top-3.5 text-gray-500" />
                                         <input
                                             type="password" placeholder="Password"
-                                            className="input-field pl-10"
+                                            className="input-field pl-10 w-full"
                                             value={form.password}
                                             onChange={(e) => setForm({ ...form, password: e.target.value })}
+                                            required
                                         />
                                     </div>
                                     <button type="submit" disabled={loading} className="btn-primary w-full flex items-center justify-center gap-2">
@@ -107,13 +124,13 @@ export default function LoginPage() {
                             <motion.div key="s2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
                                 <h2 className="text-2xl font-bold text-white mb-2">Verify identity</h2>
                                 <p className="text-gray-500 text-sm mb-6">Enter the OTP sent to <span className="text-navy-300">{form.email}</span></p>
-                                <div className="mb-6">
+                                <div className="mb-6 flex justify-center">
                                     <OtpInput value={otp} onChange={setOtp} />
                                 </div>
                                 <button onClick={handleVerifyOtp} disabled={loading} className="btn-primary w-full">
                                     {loading ? "Verifying..." : "Sign In"}
                                 </button>
-                                <button onClick={() => setStep(1)} className="w-full text-center text-sm text-gray-500 hover:text-white mt-3 transition-colors">
+                                <button onClick={() => { setStep(1); setOtp(""); }} className="w-full text-center text-sm text-gray-500 hover:text-white mt-3 transition-colors">
                                     ← Back
                                 </button>
                             </motion.div>

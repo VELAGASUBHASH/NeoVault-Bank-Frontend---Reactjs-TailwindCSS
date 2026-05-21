@@ -1,36 +1,38 @@
-import { createSlice } from '@reduxjs/toolkit';
-
-// Safely parse user from localStorage
-const storedUser = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : null;
+import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
-    user: storedUser,
-    token: localStorage.getItem('token') || null,
-    isAuthenticated: !!localStorage.getItem('token'),
+    user: localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")) : null,
+    token: localStorage.getItem("accessToken") || null,
+    isAuthenticated: !!localStorage.getItem("accessToken"),
 };
 
-const authSlice = createSlice({
-    name: 'auth',
+export const authSlice = createSlice({
+    name: "auth",
     initialState,
     reducers: {
-        loginSuccess(state, action) {
-            state.user = action.payload.user;
-            state.token = action.payload.token;
+        setCredentials: (state, action) => {
+            const { user, accessToken } = action.payload;
+
+            // Makes sure roles match across all component hooks cleanly
+            if (user && user.role) {
+                user.role = user.role.startsWith("ROLE_") ? user.role : `ROLE_${user.role}`;
+            }
+
+            state.user = user;
+            state.token = accessToken;
             state.isAuthenticated = true;
-            // Persist to local storage
-            localStorage.setItem('token', action.payload.token);
-            localStorage.setItem('user', JSON.stringify(action.payload.user));
+
+            localStorage.setItem("accessToken", accessToken);
+            localStorage.setItem("user", JSON.stringify(user));
         },
-        logout(state) {
+        logout: (state) => {
             state.user = null;
             state.token = null;
             state.isAuthenticated = false;
-            // Clear local storage
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
+            localStorage.clear();
         },
     },
 });
 
-export const { loginSuccess, logout } = authSlice.actions;
+export const { setCredentials, logout } = authSlice.actions;
 export default authSlice.reducer;

@@ -1,40 +1,44 @@
 import { Routes, Route, Navigate } from "react-router-dom";
-import { useSelector } from "react-redux";
-import { AnimatePresence } from "framer-motion";
+import AppLayout from "./layouts/AppLayout";
+import ProtectedRoute from "./routes/ProtectedRoute";
 
-import LandingPage from "./pages/LandingPage";
+// Auth Pages
 import LoginPage from "./pages/auth/LoginPage";
 import RegisterPage from "./pages/auth/RegisterPage";
+
+// Secure Workspace Pages
 import DashboardPage from "./pages/dashboard/DashboardPage";
 import AccountsPage from "./pages/accounts/AccountsPage";
 import TransactionsPage from "./pages/transactions/TransactionsPage";
 import LoansPage from "./pages/loans/LoansPage";
 import AdminPage from "./pages/admin/AdminPage";
-import AppLayout from "./layouts/AppLayout";
-import ProtectedRoute from "./routes/ProtectedRoute";
 
 export default function App() {
-  const { isAuthenticated } = useSelector((s) => s.auth);
-
   return (
-      <AnimatePresence mode="wait">
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={isAuthenticated ? <Navigate to="/dashboard" /> : <LoginPage />} />
-          <Route path="/register" element={isAuthenticated ? <Navigate to="/dashboard" /> : <RegisterPage />} />
+      <Routes>
+        {/* Public Routes */}
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
 
-          <Route element={<ProtectedRoute />}>
-            <Route element={<AppLayout />}>
-              <Route path="/dashboard" element={<DashboardPage />} />
-              <Route path="/accounts" element={<AccountsPage />} />
-              <Route path="/transactions" element={<TransactionsPage />} />
-              <Route path="/loans" element={<LoansPage />} />
-              <Route path="/admin" element={<AdminPage />} />
-            </Route>
+        {/* SECURE USER AREA: Wrapped with ProtectedRoute layout containing valid role lists */}
+        <Route element={<ProtectedRoute allowedRoles={["USER", "ADMIN"]} />}>
+          <Route element={<AppLayout />}>
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/accounts" element={<AccountsPage />} />
+            <Route path="/transactions" element={<TransactionsPage />} />
+            <Route path="/loans" element={<LoansPage />} />
           </Route>
+        </Route>
 
-          <Route path="*" element={<Navigate to="/" />} />
-        </Routes>
-      </AnimatePresence>
+        {/* SECURE ADMIN DESK AREA: Strictly restricted to ADMIN role credentials */}
+        <Route element={<ProtectedRoute allowedRoles={["ADMIN"]} />}>
+          <Route element={<AppLayout />}>
+            <Route path="/admin" element={<AdminPage />} />
+          </Route>
+        </Route>
+
+        {/* Fallback Catch-all Route handling */}
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
   );
 }
