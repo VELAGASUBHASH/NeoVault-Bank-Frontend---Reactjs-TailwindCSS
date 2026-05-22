@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { Plus, Eye, EyeOff, CreditCard, Wallet, RefreshCw } from "lucide-react";
-import { createAccount, getBalance } from "../../services/accountService";
+// 1. ADDED getMyAccount to imports
+import { createAccount, getBalance, getMyAccount } from "../../services/accountService";
 import Modal from "../../components/ui/Modal";
 import StatusBadge from "../../components/ui/StatusBadge";
 import { SkeletonCard } from "../../components/ui/SkeletonLoader";
@@ -18,10 +19,27 @@ export default function AccountsPage() {
     const [form, setForm] = useState({ accountType: "SAVINGS", transactionPin: "" });
     const [pageLoading, setPageLoading] = useState(true);
 
-    // Simulate initial load (replace with real fetch if you have a "get all accounts" endpoint)
+    // 2. REPLACED mock timeout with real API fetch
     useEffect(() => {
-        const t = setTimeout(() => setPageLoading(false), 900);
-        return () => clearTimeout(t);
+        const fetchAccounts = async () => {
+            setPageLoading(true);
+            try {
+                const data = await getMyAccount();
+                // 3. Backend returns a single object, but we need an array for the grid mapping
+                if (data) {
+                    setAccounts([data]);
+                }
+            } catch (err) {
+                // If they just haven't created an account yet, don't show an error toast
+                if (err.response?.status !== 404 && err.response?.status !== 400 && err.response?.status !== 500) {
+                    toast.error("Failed to load your account");
+                }
+            } finally {
+                setPageLoading(false);
+            }
+        };
+
+        fetchAccounts();
     }, []);
 
     const handleCreate = async () => {
@@ -35,13 +53,13 @@ export default function AccountsPage() {
                 transactionPin: form.transactionPin,
             });
             // API Response: { accountNumber, accountType, balance, accountStatus }
-            const newAccount = res.data;
+            const newAccount = res.data || res; // handle varying axios response structures
             setAccounts((prev) => [...prev, newAccount]);
             toast.success(`${form.accountType} account created — ${newAccount.accountNumber}`);
             setShowCreate(false);
             setForm({ accountType: "SAVINGS", transactionPin: "" });
         } catch (err) {
-            toast.error(err.response?.data?.message || "Failed to create account");
+            toast.error(err.response?.data?.message || err.response?.data || "Failed to create account");
         } finally {
             setLoadingCreate(false);
         }
@@ -52,12 +70,13 @@ export default function AccountsPage() {
         try {
             const res = await getBalance(accountNumber);
             // API Response: { accountNumber, accountType, balance, accountStatus }
-            setVisibleBalances((p) => ({ ...p, [accountNumber]: res.data.balance }));
+            const accountData = res.data || res;
+            setVisibleBalances((p) => ({ ...p, [accountNumber]: accountData.balance }));
             // Also update accountStatus in case it changed
             setAccounts((prev) =>
                 prev.map((a) =>
                     a.accountNumber === accountNumber
-                        ? { ...a, accountStatus: res.data.accountStatus, balance: res.data.balance }
+                        ? { ...a, accountStatus: accountData.accountStatus, balance: accountData.balance }
                         : a
                 )
             );
@@ -89,6 +108,7 @@ export default function AccountsPage() {
                     <h1 className="text-2xl font-bold text-white">Accounts</h1>
                     <p className="text-gray-500 text-sm mt-0.5">Manage your NeoVault bank accounts</p>
                 </div>
+                {/* Optional: Disable new account button if they already have one and your system only allows 1 */}
                 <button
                     onClick={() => setShowCreate(true)}
                     className="btn-primary flex items-center gap-2 text-sm"
@@ -188,9 +208,9 @@ export default function AccountsPage() {
 
                                 {/* Card number decoration */}
                                 <div className="flex items-center gap-2 pt-4 border-t border-vault-border/40">
-                  <span className="text-xs font-mono text-gray-600 tracking-widest">
-                    •••• •••• •••• {acc.accountNumber.slice(-4)}
-                  </span>
+                                  <span className="text-xs font-mono text-gray-600 tracking-widest">
+                                    •••• •••• •••• {acc.accountNumber ? acc.accountNumber.slice(-4) : "XXXX"}
+                                  </span>
                                 </div>
                             </div>
                         </motion.div>
