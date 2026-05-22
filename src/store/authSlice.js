@@ -1,35 +1,21 @@
 import { createSlice } from "@reduxjs/toolkit";
 
-const initialState = {
-    user: localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")) : null,
-    token: localStorage.getItem("accessToken") || null,
-    isAuthenticated: !!localStorage.getItem("accessToken"),
-};
-
-export const authSlice = createSlice({
+const authSlice = createSlice({
     name: "auth",
-    initialState,
+    initialState: {
+        // FIX: Initialize state from localStorage so the app knows you are logged in on refresh
+        user: JSON.parse(localStorage.getItem("user")) || null,
+        token: localStorage.getItem("token") || null,
+    },
     reducers: {
         setCredentials: (state, action) => {
-            const { user, accessToken } = action.payload;
-
-            // Makes sure roles match across all component hooks cleanly
-            if (user && user.role) {
-                user.role = user.role.startsWith("ROLE_") ? user.role : `ROLE_${user.role}`;
-            }
-
-            state.user = user;
-            state.token = accessToken;
-            state.isAuthenticated = true;
-
-            localStorage.setItem("accessToken", accessToken);
-            localStorage.setItem("user", JSON.stringify(user));
+            state.user = action.payload.user;
+            state.token = action.payload.accessToken;
         },
         logout: (state) => {
             state.user = null;
             state.token = null;
-            state.isAuthenticated = false;
-            localStorage.clear();
+            localStorage.clear(); // Ensure clean logout
         },
     },
 });

@@ -23,7 +23,13 @@ export default function App() {
         {/* SECURE USER AREA: Wrapped with ProtectedRoute layout containing valid role lists */}
         <Route element={<ProtectedRoute allowedRoles={["USER", "ADMIN"]} />}>
           <Route element={<AppLayout />}>
-            <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/dashboard" element={
+                  <ProtectedRoute>
+                      <AppLayout />
+                  </ProtectedRoute>
+              }>
+                  <Route index element={<DashboardPage />} />
+              </Route>
             <Route path="/accounts" element={<AccountsPage />} />
             <Route path="/transactions" element={<TransactionsPage />} />
             <Route path="/loans" element={<LoansPage />} />

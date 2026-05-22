@@ -40,8 +40,6 @@ export default function LoginPage() {
             const res = await verifyLoginOtp({ email: form.email, otp });
 
             const accessToken = res.data?.accessToken || res.data?.token || res.token;
-
-            // FIX: Prioritize the exact name and role sent by the backend AuthResponse
             const user = {
                 name: res.data?.name || form.email.split("@")[0],
                 email: form.email,
@@ -51,6 +49,10 @@ export default function LoginPage() {
             if (!accessToken) {
                 throw new Error("Authentication token was not returned from server.");
             }
+
+            // CRITICAL FIX: Save the token so your api.js interceptor can attach it to requests
+            localStorage.setItem("token", accessToken);
+            localStorage.setItem("user", JSON.stringify(user));
 
             dispatch(setCredentials({ user, accessToken }));
 
