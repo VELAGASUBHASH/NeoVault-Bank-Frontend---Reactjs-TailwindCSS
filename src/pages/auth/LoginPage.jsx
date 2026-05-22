@@ -39,21 +39,19 @@ export default function LoginPage() {
         try {
             const res = await verifyLoginOtp({ email: form.email, otp });
 
-            // Extract tokens safely whether matching standard data roots or custom payload objects
             const accessToken = res.data?.accessToken || res.data?.token || res.token;
 
-            // Reconstruct the user object matching what your global components expect
+            // FIX: Prioritize the exact name and role sent by the backend AuthResponse
             const user = {
-                name: form.email.split("@")[0],
+                name: res.data?.name || form.email.split("@")[0],
                 email: form.email,
-                role: res.data?.user?.role || res.data?.role || "USER" // Falls back cleanly if not returned
+                role: res.data?.role || "ROLE_USER"
             };
 
             if (!accessToken) {
                 throw new Error("Authentication token was not returned from server.");
             }
 
-            // Corrected Action: Dispatches via setCredentials to structure and persist session tokens
             dispatch(setCredentials({ user, accessToken }));
 
             toast.success("Welcome back!");

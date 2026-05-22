@@ -32,13 +32,10 @@ export default function RegisterPage() {
         if (otp.length < 6) return toast.error("Enter complete OTP");
         setLoading(true);
         try {
-            // FIX: Pass the entire registration payload along with the OTP
-            // so your backend can persist user credentials securely on code completion.
+
             await verifyRegisterOtp({
-                name: form.name,
                 email: form.email,
-                password: form.password,
-                otp
+                otp: otp
             });
             setStep(3);
         } catch (err) {
